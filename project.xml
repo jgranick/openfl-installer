@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+	
+	<meta title="OpenFLInstaller" package="com.sample.openflinstaller" version="1.0.0" company="OpenFL" />
+	<app main="Main" path="Export" file="OpenFLInstaller" />
+	
+	<window width="400" height="300" />
+	
+	<source path="Source" />
+	
+	<haxelib name="openfl" />
+	<haxelib name="actuate" />
+	<haxelib name="task" />
+	
+	<assets path="Assets" rename="assets" embed="true" />
+	
+</project>
