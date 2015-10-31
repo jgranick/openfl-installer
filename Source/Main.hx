@@ -2,6 +2,8 @@ package;
 
 
 import haxe.io.Path;
+import haxe.macro.Compiler;
+import lime.system.BackgroundWorker;
 import lime.tools.helpers.PathHelper;
 import lime.tools.helpers.PlatformHelper;
 import lime.tools.helpers.ProcessHelper;
@@ -9,10 +11,7 @@ import motion.Actuate;
 import openfl.display.Sprite;
 import openfl.events.Event;
 import openfl.events.MouseEvent;
-import openfl.events.ProgressEvent;
-import openfl.net.URLLoader;
-import openfl.net.URLLoaderDataFormat;
-import openfl.net.URLRequest;
+import openfl.Assets;
 import sys.FileSystem;
 import sys.io.File;
 import task.Task;
@@ -26,8 +25,6 @@ class Main extends Display {
 	private static var TASK_INSTALL_LIME = "installLime";
 	private static var TASK_INSTALL_OPENFL = "installOpenFL";
 	private static var TASK_SETUP_OPENFL = "setupOpenFL";
-	
-	private var urlLoader:URLLoader;
 	
 	
 	public function new () {
@@ -49,126 +46,134 @@ class Main extends Display {
 		
 		StatusText.text = "";
 		
+		//var tempFile = PathHelper.getTemporaryFile ();
+		//var output = ProcessHelper.runProcess ("", "cmd", [ "/C", "haxelib", "version" ], true, true, true);
+		//Sys.println (StringTools.trim (output));
+		//if (FileSystem.exists (tempFile)) {
+			//
+			//Sys.println (tempFile);
+			//
+		//}
+		
 	}
 	
 	
 	private function installHaxe ():Void {
 		
-		var url = switch (PlatformHelper.hostPlatform) {
-			
-			case WINDOWS: "http://haxe.org/website-content/downloads/3.2.1/downloads/haxe-3.2.1-win.exe";
-			case MAC: "http://haxe.org/website-content/downloads/3.2.1/downloads/haxe-3.2.1-osx-installer.pkg";
-			default: "http://www.openfl.org/builds/haxe/haxe-3.2.1-linux-installer.tar.gz";
-			
-		}
+		StatusText.text = "Running Haxe Installer...";
 		
-		urlLoader = new URLLoader ();
-		urlLoader.dataFormat = URLLoaderDataFormat.BINARY;
-		urlLoader.addEventListener (Event.COMPLETE, function (_) {
+		Actuate.timer (1.2).onComplete (function () {
 			
-			StatusText.text = "Installing Haxe";
+			var path = PathHelper.getTemporaryDirectory ();
+			PathHelper.mkdir (path);
+			path = PathHelper.combine (path, "haxe-installer.exe");
+			File.saveBytes (path, Assets.getBytes ("haxe"));
 			
-			Actuate.timer (0.1).onComplete (function () {
+			switch (PlatformHelper.hostPlatform) {
 				
-				var file = Path.withoutDirectory (url);
-				File.saveBytes (file, urlLoader.data);
+				case WINDOWS: ProcessHelper.runProcess ("", "cmd", [ "/c", path ], true, true, true);
+				case MAC: ProcessHelper.runProcess ("", "open", [ path ], true, true, true);
+				default: ProcessHelper.runProcess ("", "xdg-open", [ path ], true, true, true);
 				
-				switch (PlatformHelper.hostPlatform) {
-					
-					case WINDOWS: Sys.command (file);
-					case MAC: Sys.command ("open", [ file ]);
-					default: Sys.command ("xdg-open", [ file ]);
-					
-				}
-				
-				TaskManager.completeTask (TASK_INSTALL_HAXE);
-				
-				//FileSystem.deleteFile (file);
-				
-			});
+			}
+			
+			PathHelper.removeDirectory (Path.directory (path));
+			TaskManager.completeTask (TASK_INSTALL_HAXE);
 			
 		});
-		urlLoader.addEventListener (ProgressEvent.PROGRESS, function (event) {
-			
-			StatusText.text = "Downloading Haxe... (" + Std.int ((event.bytesLoaded / event.bytesTotal) * 100) + "%)";
-			
-		});
-		urlLoader.load (new URLRequest (url));
 		
 	}
 	
 	
 	private function installLime ():Void {
 		
-		var url = "http://www.openfl.org/builds/lime/lime-2.7.0.zip";
+		StatusText.text = "Installing Lime...";
 		
-		urlLoader = new URLLoader ();
-		urlLoader.dataFormat = URLLoaderDataFormat.BINARY;
-		urlLoader.addEventListener (Event.COMPLETE, function (_) {
+		var path = PathHelper.getTemporaryFile (".zip");
+		var output = File.write (path);
+		
+		var limeSegmentCount = Std.parseInt (Compiler.getDefine ("LIME_SEGMENT_COUNT"));
+		
+		for (i in 0...limeSegmentCount) {
 			
-			StatusText.text = "Installing Lime";
+			output.write (Assets.getBytes ("lime_segment" + i));
 			
-			Actuate.timer (0.1).onComplete (function () {
-				
-				var file = "lime.zip";
-				File.saveBytes (file, urlLoader.data);
-				Sys.command ("haxelib", [ "local", "lime.zip" ]);
-				
-				TaskManager.completeTask (TASK_INSTALL_LIME);
-				
-				//FileSystem.deleteFile (file);
-				
-			});
+		}
+		
+		output.close ();
+		
+		var worker = new BackgroundWorker ();
+		worker.doWork.add (function (_) {
 			
-		});
-		urlLoader.addEventListener (ProgressEvent.PROGRESS, function (event) {
-			
-			StatusText.text = "Downloading Lime... (" + Std.int ((event.bytesLoaded / event.bytesTotal) * 100) + "%)";
+			ProcessHelper.runProcess ("", "haxelib", [ "local", path ], true, true, true);
+			worker.sendComplete ();
 			
 		});
-		urlLoader.load (new URLRequest (url));
+			
+		worker.onComplete.add (function (_) {
+			try {
+				
+				FileSystem.deleteFile (path);
+				
+			} catch (e:Dynamic) { }
+			
+			TaskManager.completeTask (TASK_INSTALL_LIME);
+			
+		});
+		worker.run ();
 		
 	}
 	
 	
 	private function installOpenFL ():Void {
 		
-		var url = "http://lib.haxe.org/p/openfl/3.4.0/download/";
+		StatusText.text = "Installing OpenFL...";
 		
-		urlLoader = new URLLoader ();
-		urlLoader.dataFormat = URLLoaderDataFormat.BINARY;
-		urlLoader.addEventListener (Event.COMPLETE, function (_) {
+		var path = PathHelper.getTemporaryFile (".zip");
+		File.saveBytes (path, Assets.getBytes ("openfl"));
+		
+		var worker = new BackgroundWorker ();
+		worker.doWork.add (function (_) {
 			
-			StatusText.text = "Installing OpenFL";
-			
-			Actuate.timer (0.1).onComplete (function () {
-				
-				var file = "openfl.zip";
-				File.saveBytes (file, urlLoader.data);
-				Sys.command ("haxelib", [ "local", "openfl.zip" ]);
-				
-				TaskManager.completeTask (TASK_INSTALL_OPENFL);
-				
-				//FileSystem.deleteFile (file);
-				
-			});
+			ProcessHelper.runProcess ("", "haxelib", [ "local", path ], true, true, true);
+			worker.sendComplete ();
 			
 		});
-		urlLoader.addEventListener (ProgressEvent.PROGRESS, function (event) {
+		worker.onComplete.add (function (_) {
 			
-			StatusText.text = "Downloading OpenFL... (" + Std.int ((event.bytesLoaded / event.bytesTotal) * 100) + "%)";
+			try {
+				
+				FileSystem.deleteFile (path);
+				
+			} catch (e:Dynamic) { }
+			
+			TaskManager.completeTask (TASK_INSTALL_OPENFL);
 			
 		});
-		urlLoader.load (new URLRequest (url));
+		worker.run ();
 		
 	}
 	
 	
 	private function setupOpenFL ():Void {
 		
-		StatusText.text = "Setting up OpenFL...";
-		Sys.command ("haxelib", [ "run", "openfl", "setup", "-y" ]);
-		StatusText.text = "Done!";
+		StatusText.text = "Setting Up OpenFL...";
+		
+		var worker = new BackgroundWorker ();
+		worker.doWork.add (function (_) {
+			
+			ProcessHelper.runProcess ("", "haxelib", [ "run", "openfl", "setup", "-y" ], true, true, true);
+			worker.sendComplete ();
+			
+		});
+		worker.onComplete.add (function (_) {
+			
+			StatusText.text = "Done!";
+			
+			TaskManager.completeTask (TASK_SETUP_OPENFL);
+			
+		});
+		worker.run ();
 		
 	}
 	
@@ -189,7 +194,7 @@ class Main extends Display {
 		TaskManager.addTask (new Task (TASK_INSTALL_HAXE, installHaxe), null, false);
 		TaskManager.addTask (new Task (TASK_INSTALL_LIME, installLime), [ TASK_INSTALL_HAXE ], false);
 		TaskManager.addTask (new Task (TASK_INSTALL_OPENFL, installOpenFL), [ TASK_INSTALL_LIME ], false);
-		TaskManager.addTask (new Task (TASK_SETUP_OPENFL, setupOpenFL), [ TASK_INSTALL_OPENFL ]);
+		TaskManager.addTask (new Task (TASK_SETUP_OPENFL, setupOpenFL), [ TASK_INSTALL_OPENFL ], false);
 		
 	}
 	

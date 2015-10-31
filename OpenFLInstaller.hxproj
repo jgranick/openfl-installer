@@ -4,14 +4,14 @@
   <output>
     <movie outputType="CustomBuild" />
     <movie input="" />
-    <movie path="project.xml" />
+    <movie path="project.hxp" />
     <movie fps="30" />
     <movie width="400" />
     <movie height="300" />
-    <movie version="1" />
+    <movie version="0" />
     <movie minorVersion="0" />
     <movie platform="Lime" />
-    <movie background="FFFFFF" />
+    <movie background="#FFFFFF" />
     <movie preferredSDK=";3;" />
   </output>
   <!-- Other classes to be compiled into your SWF -->
@@ -19,14 +19,14 @@
     <class path="D:\Development\Haxe\openfl" />
     <class path="D:\Development\Haxe\lime" />
     <class path="D:\Development\Haxe\actuate" />
-    <class path="C:\HaxeToolkit\haxe\lib\task\1,0,6" />
+    <class path="D:\Development\Haxe\task" />
     <class path="D:\Development\Haxe\swf" />
     <class path="Source" />
     <class path="Export\windows\neko\haxe" />
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="openfl=3.4.0&#xA;lime=2.7.0&#xA;actuate=1.8.6&#xA;task=1.0.6&#xA;swf=2.1.2&#xA;openfl-next&#xA;tools=2.7.0&#xA;no-compilation&#xA;native&#xA;lime-native&#xA;openfl-native&#xA;windows&#xA;desktop&#xA;display" />
+    <option directives="openfl=3.4.0&#xA;lime=2.7.0&#xA;actuate=1.8.6&#xA;task=1.0.6&#xA;swf=2.1.2&#xA;HAXE_VERSION=3.2.1&#xA;LIME_VERSION=2.7.0&#xA;openfl-next&#xA;tools=2.7.0&#xA;OPENFL_VERSION=3.4.0&#xA;no-compilation&#xA;native&#xA;lime-native&#xA;openfl-native&#xA;windows&#xA;desktop&#xA;display" />
     <option flashStrict="False" />
     <option noInlineOnDebug="False" />
     <option mainClass="ApplicationMain" />
