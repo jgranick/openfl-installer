@@ -2,14 +2,20 @@ package;
 
 
 import haxe.io.Bytes;
+import haxe.io.Path;
 import lime.project.Asset;
 import lime.project.AssetEncoding;
 import lime.project.AssetType;
 import lime.project.Haxelib;
 import lime.project.HXProject;
 import lime.project.ProjectXMLParser;
+import lime.tools.helpers.PathHelper;
+import lime.tools.helpers.PlatformHelper;
 import lime.tools.helpers.StringHelper;
 import lime.utils.ByteArray;
+import lime.net.URLLoader;
+import lime.net.URLLoaderDataFormat;
+import lime.net.URLRequest;
 import sys.FileSystem;
 import sys.io.File;
 
@@ -17,28 +23,115 @@ import sys.io.File;
 class Project extends HXProject {
 	
 	
+	private var urls = new Map<String, String> ();
+	private var files = new Map<String, String> ();
+	private var versions = new Map<String, String> ();
+	
+	
 	public function new () {
 		
 		super ();
 		
-		// TODO: Automate version numbers from file names
+		versions.set ("haxe", "3.2.1");
+		versions.set ("lime", "2.7.0");
+		versions.set ("openfl", "3.4.0");
+		versions.set ("swf", "2.1.2");
+		versions.set ("hxcpp", "3.2.180");
+		versions.set ("actuate", "1.8.6");
+		versions.set ("box2d", "1.2.3");
+		versions.set ("layout", "1.2.1");
+		versions.set ("openfl-samples", "3.3.1");
+		versions.set ("lime-samples", "2.6.0");
 		
-		var haxeVersion = "3.2.1";
-		var limeVersion = "2.7.0";
-		var openflVersion = "3.4.0";
+		for (key in versions.keys ()) {
+			
+			haxedefs.set (key.toUpperCase () + "_VERSION", versions[key]);
+			
+		}
 		
-		haxedefs.set ("HAXE_VERSION", haxeVersion);
-		haxedefs.set ("LIME_VERSION", limeVersion);
-		haxedefs.set ("OPENFL_VERSION", openflVersion);
+		switch (PlatformHelper.hostPlatform) {
+			
+			case WINDOWS: urls.set ("haxe", "http://haxe.org/website-content/downloads/3.2.1/downloads/haxe-" + versions["haxe"] + "-win.exe");
+			case MAC: urls.set ("haxe", "http://haxe.org/website-content/downloads/3.2.1/downloads/haxe-" + versions["haxe"] + "-osx-installer.pkg");
+			default:
+			
+		}
 		
-		meta.title = "OpenFL " + openflVersion + " Installer";
+		urls.set ("lime", "http://www.openfl.org/builds/lime/lime-" + versions["lime"] + ".zip");
+		urls.set ("openfl", "http://www.openfl.org/builds/openfl/openfl-" + versions["openfl"] + ".zip");
+		urls.set ("swf", "http://www.openfl.org/builds/swf/swf-" + versions["swf"] + ".zip");
+		urls.set ("hxcpp", "http://lib.haxe.org/files/3.0/hxcpp-" + StringTools.replace (versions["hxcpp"], ".", ",") + ".zip");
+		urls.set ("actuate", "http://lib.haxe.org/files/3.0/actuate-" + StringTools.replace (versions["actuate"], ".", ",") + ".zip");
+		urls.set ("box2d", "http://lib.haxe.org/files/3.0/box2d-" + StringTools.replace (versions["box2d"], ".", ",") + ".zip");
+		urls.set ("layout", "http://lib.haxe.org/files/3.0/layout-" + StringTools.replace (versions["layout"], ".", ",") + ".zip");
+		urls.set ("openfl-samples", "http://lib.haxe.org/files/3.0/openfl-samples-" + StringTools.replace (versions["openfl-samples"], ".", ",") + ".zip");
+		urls.set ("lime-samples", "http://lib.haxe.org/files/3.0/lime-samples-" + StringTools.replace (versions["lime-samples"], ".", ",") + ".zip");
+		
+		for (key in urls.keys ()) {
+			
+			files.set (key, PathHelper.combine ("Assets", Path.withoutDirectory (urls[key])));
+			
+		}
+		
+		var downloading = false;
+		
+		if (command != "display") {
+			
+			for (key in files.keys ()) {
+				
+				var path = files[key];
+				
+				if (!FileSystem.exists (path)) {
+					
+					Sys.println ("Downloading " + urls[key]);
+					
+					downloading = true;
+					var percent = 0;
+					
+					var urlLoader = new URLLoader ();
+					urlLoader.onComplete.add (function (_) {
+						
+						Sys.println ("\nSaving to " + path);
+						
+						File.saveBytes (path, urlLoader.data);
+						downloading = false;
+						
+					});
+					urlLoader.onProgress.add (function (_, bytesLoaded, bytesTotal) {
+						
+						var progress = Std.int ((bytesLoaded / bytesTotal) * 100);
+						
+						if (progress > percent) {
+							
+							Sys.print (".");
+							percent = progress;
+							
+						}
+						
+					});
+					urlLoader.dataFormat = URLLoaderDataFormat.BINARY;
+					urlLoader.load (new URLRequest (urls[key]));
+					
+				}
+				
+				while (downloading) {
+					
+					Sys.sleep (1);
+					
+				}
+				
+			}
+			
+		}
+		
+		meta.title = "OpenFL Installer (" + versions["openfl"] + ")";
 		meta.packageName = "com.sample.openflinstaller";
 		meta.version = "1.0.0";
 		meta.company = "OpenFL";
 		
 		app.main = "Main";
 		app.path = "Export";
-		app.file = "openfl-" + openflVersion + "-installer";
+		app.file = "openfl-" + versions["openfl"] + "-installer";
 		
 		window.width = 400;
 		window.height = 300;
@@ -52,40 +145,56 @@ class Project extends HXProject {
 		merge (new ProjectXMLParser ("Assets/library.bundle/include.xml"));
 		
 		assets.push (new Asset ("Assets/TradeGothicLTStd.otf", "", null, true));
-		assets.push (new Asset ("Assets/haxe-" + haxeVersion + "-win.exe", "haxe", null, true));
 		
 		if (command != "display") {
 			
-			var path = "Assets/lime-" + limeVersion + ".zip";
-			//var maxResourceSize = 1024 * 1024 * 12;
-			var maxResourceSize = 1024 * 1024;
-			var stat = FileSystem.stat (path);
-			var limeSegments = Math.ceil (stat.size / maxResourceSize);
-			var input = File.read (path);
-			var bytes = Bytes.alloc (maxResourceSize);
+			for (key in files.keys ()) {
+				
+				embedResource (key);
+				
+			}
 			
-			for (i in 0...limeSegments) {
+		}
+		
+	}
+	
+	
+	private function embedResource (key:String):Void {
+		
+		var maxResourceSize = 1024 * 1024 * 6;
+		var maxSegmentSize = 1024 * 1024;
+		
+		var stat = FileSystem.stat (files[key]);
+		
+		if (stat.size < maxResourceSize) {
+			
+			assets.push (new Asset (files[key], key, AssetType.BINARY, !targetFlags.exists ("neko")));
+			
+		} else {
+			
+			var segmentCount = Math.ceil (stat.size / maxSegmentSize);
+			var input = File.read (files[key]);
+			var bytes = Bytes.alloc (maxSegmentSize);
+			
+			for (i in 0...segmentCount) {
 				
-				var length = input.readBytes (bytes, 0, maxResourceSize);
+				var length = input.readBytes (bytes, 0, maxSegmentSize);
 				
-				if (length < maxResourceSize) {
+				if (length < maxSegmentSize) {
 					
 					bytes = bytes.sub (0, length);
 					
 				}
 				
-				File.saveBytes (path + ".segment" + i, bytes);
-				assets.push (new Asset (path + ".segment" + i, "lime_segment" + i, AssetType.BINARY, !targetFlags.exists ("neko")));
+				File.saveBytes (files[key] + ".segment" + i, bytes);
+				assets.push (new Asset (files[key] + ".segment" + i, key + ".segment" + i, AssetType.BINARY, !targetFlags.exists ("neko")));
 				
 			}
 			
 			input.close ();
-			
-			haxedefs.set ("LIME_SEGMENT_COUNT", limeSegments);
+			haxedefs.set (key.toUpperCase () + "_SEGMENT_COUNT", segmentCount);
 			
 		}
-		
-		assets.push (new Asset ("Assets/openfl-" + openflVersion + ".zip", "openfl", null, true));
 		
 	}
 	
