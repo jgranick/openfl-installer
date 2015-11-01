@@ -67,7 +67,7 @@ class Main extends Display {
 			switch (PlatformHelper.hostPlatform) {
 				
 				case WINDOWS: runProcess (path);
-				case MAC: runProcess ("open", [ path ]);
+				case MAC: runProcess ("open", [ "-W", path ]);
 				default: runProcess ("xdg-open", [ path ]);
 				
 			}
