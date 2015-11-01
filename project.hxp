@@ -109,6 +109,12 @@ class Project extends HXProject {
 						}
 						
 					});
+					urlLoader.onIOError.add (function (_, msg) {
+						
+						Sys.println ("Error: " + msg);
+						Sys.exit (1);
+						
+					});
 					urlLoader.dataFormat = URLLoaderDataFormat.BINARY;
 					urlLoader.load (new URLRequest (urls[key]));
 					

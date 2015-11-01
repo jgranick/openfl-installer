@@ -3,6 +3,6 @@
 	
 	<haxelib name="swf" />
 	
-	<library path="library.swf" id="library" generate="true" preload="true" />
+	<library path="library.swf" id="library" generate="true" preload="true" embed="true" />
 	
 </bundle>
