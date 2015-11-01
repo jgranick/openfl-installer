@@ -35,7 +35,7 @@ class Project extends HXProject {
 		versions.set ("haxe", "3.2.1");
 		versions.set ("lime", "2.7.0");
 		versions.set ("openfl", "3.4.0");
-		versions.set ("swf", "2.1.2");
+		versions.set ("swf", "2.1.3");
 		versions.set ("hxcpp", "3.2.180");
 		versions.set ("actuate", "1.8.6");
 		versions.set ("box2d", "1.2.3");
