@@ -58,7 +58,7 @@ class Main extends Display {
 				
 				case WINDOWS: path = PathHelper.combine (path, "haxe-" + Compiler.getDefine ("HAXE_VERSION") + "-win.exe");
 				case MAC: path = PathHelper.combine (path, "haxe-" + Compiler.getDefine ("HAXE_VERSION") + "-osx-installer.pkg");
-				default:
+				default: path = PathHelper.combine (path, "haxe-" + Compiler.getDefine ("HAXE_VERSION") + "-linux-installer.tar.gz");
 				
 			}
 			
@@ -68,7 +68,11 @@ class Main extends Display {
 				
 				case WINDOWS: runProcess (path);
 				case MAC: runProcess ("open", [ "-W", path ]);
-				default: runProcess ("xdg-open", [ path ]);
+				default: 
+					
+					runProcess ("tar", [ "-xvf", path, "-C", Path.directory (path) ]);
+					runProcess ("chmod", [ "+x", path ]);
+					runProcess ("x-terminal-emulator", [ "-e", PathHelper.combine (Path.directory (path), "install-haxe.sh"), "--disable-factory" ]);
 				
 			}
 			
@@ -164,7 +168,7 @@ class Main extends Display {
 				try { File.copy (PathHelper.getHaxelib (new Haxelib ("openfl")) + "\\templates\\\\bin\\openfl.exe", haxePath + "\\openfl.exe"); } catch (e:Dynamic) {}
 				try { File.copy (PathHelper.getHaxelib (new Haxelib ("openfl")) + "\\templates\\\\bin\\openfl.sh", haxePath + "\\openfl"); } catch (e:Dynamic) {}
 				
-			} else {
+			} else if (PlatformHelper.hostPlatform == Platform.MAC) {
 				
 				try {
 					
@@ -172,6 +176,19 @@ class Main extends Display {
 					ProcessHelper.runCommand ("", "sudo", [ "chmod", "755", "/usr/local/bin/lime" ], false);
 					ProcessHelper.runCommand ("", "sudo", [ "cp", "-f", PathHelper.getHaxelib (new Haxelib ("openfl")) + "/templates/bin/openfl.sh", "/usr/local/bin/openfl" ], false);
 					ProcessHelper.runCommand ("", "sudo", [ "chmod", "755", "/usr/local/bin/openfl" ], false);
+					
+				} catch (e:Dynamic) {}
+				
+			} else {
+				
+				try {
+					
+					runProcess ("x-terminal-emulator", [ "-e", "haxelib", "run", "openfl", "setup", "--disable-factory" ]);
+					
+					//ProcessHelper.runCommand ("", "pkexec", [ "cp", "-f", PathHelper.getHaxelib (new Haxelib ("lime")) + "/templates/bin/lime.sh", "/usr/local/bin/lime" ], false);
+					//ProcessHelper.runCommand ("", "pkexec", [ "chmod", "755", "/usr/local/bin/lime" ], false);
+					//ProcessHelper.runCommand ("", "pkexec", [ "cp", "-f", PathHelper.getHaxelib (new Haxelib ("openfl")) + "/templates/bin/openfl.sh", "/usr/local/bin/openfl" ], false);
+					//ProcessHelper.runCommand ("", "pkexec", [ "chmod", "755", "/usr/local/bin/openfl" ], false);
 					
 				} catch (e:Dynamic) {}
 				

@@ -54,7 +54,7 @@ class Project extends HXProject {
 			
 			case WINDOWS: urls.set ("haxe", "http://haxe.org/website-content/downloads/3.2.1/downloads/haxe-" + versions["haxe"] + "-win.exe");
 			case MAC: urls.set ("haxe", "http://haxe.org/website-content/downloads/3.2.1/downloads/haxe-" + versions["haxe"] + "-osx-installer.pkg");
-			default:
+			default: urls.set ("haxe", "http://www.openfl.org/builds/haxe/haxe-" + versions["haxe"] + "-linux-installer.tar.gz");
 			
 		}
 		
