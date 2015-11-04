@@ -142,6 +142,7 @@ class Project extends HXProject {
 		
 		window.width = 400;
 		window.height = 300;
+		window.hardware = false;
 		
 		sources.push ("Source");
 		
