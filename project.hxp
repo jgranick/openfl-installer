@@ -9,6 +9,7 @@ import lime.project.AssetType;
 import lime.project.Haxelib;
 import lime.project.HXProject;
 import lime.project.ProjectXMLParser;
+import lime.tools.helpers.LogHelper;
 import lime.tools.helpers.PathHelper;
 import lime.tools.helpers.PlatformHelper;
 import lime.tools.helpers.StringHelper;
@@ -150,7 +151,15 @@ class Project extends HXProject {
 		
 		merge (new ProjectXMLParser ("Assets/library.bundle/include.xml"));
 		
-		assets.push (new Asset ("Assets/TradeGothicLTStd.otf", "", null, true));
+		if (FileSystem.exists ("Assets/TradeGothicLTStd.otf")) {
+			
+			assets.push (new Asset ("Assets/TradeGothicLTStd.otf", "", null, true));
+			
+		} else {
+			
+			LogHelper.warn ("Could not find font file \"Assets/TradeGothicLTStd.otf\"");
+			
+		}
 		
 		if (command != "display") {
 			
